@@ -1,6 +1,7 @@
 local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
+local testAnimation = nil;
 
 local game = {
     baseGravity = 0.4,
@@ -11,10 +12,11 @@ local game = {
     bumpWorld = nil,
     scene = {
         name = nil, -- name of the scene
-        collision = {{0, 400, 800, 600}, {50,200,100,500}}, -- the collision rectangles
+        collision = {}, -- the collision rectangles
         background = nil, -- background image
         foreground = nil, -- foreground image
-        objects = nil -- table containing moving/interactible objects
+        objects = nil, -- table containing moving/interactible objects
+        scale = 0.3;
     }
 }
 
@@ -97,18 +99,28 @@ end
 
 function loadScene(name)
     -- TODO: load level data into game.scene
-
+    local rawMeta = love.filesystem.read("assets/scenes/" .. name .. "/meta.json");
+    local rawCollisions = love.filesystem.read("assets/scenes/" .. name .. "/collision.json");
+    local rawObjects = love.filesystem.read("assets/scenes/" .. name .. "/object.json");
+    game.scene["meta"] = json.decode(rawMeta);
+    game.scene["collision"] = json.decode(rawCollisions);
+    game.scene["objects"] = json.decode(rawObjects);
+    game.scene["background"] = love.graphics.newImage("assets/scenes/" .. name .. "/background.png")
+    game.scene["foreground"] = love.graphics.newImage("assets/scenes/" .. name .. "/foreground.png")
     game.bumpWorld = bump.newWorld()
+    player.position.x = game.scene.meta.start.x * game.scene.meta.scale;
+    player.position.y = game.scene.meta.start.y * game.scene.meta.scale;
     pRect = player:get_rect()
     game.bumpWorld:add("player", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
     for i, rect in ipairs(game.scene.collision) do
-        game.bumpWorld:add(i .. "", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
+        game.bumpWorld:add(i .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
     end
 end
 
 function love.load()
     game.gravity = game.baseGravity
     loadScene("test")
+    testAnimation = animation.createAnimationController("player");
 end
 
 function love.update(dt)
@@ -160,12 +172,17 @@ function love.update(dt)
 
     player.sliding = player.sliding and not player.isGrounded
     player.moving = false
+
+    animation.updateController(testAnimation, dt);
 end
 
 function love.draw()
     for i, rect in ipairs(game.scene.collision) do
         love.graphics.rectangle("fill", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
     end
+
+    love.graphics.draw(game.scene.background, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
+    love.graphics.draw(game.scene.foreground, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
     local pRect = player:get_rect()
     love.graphics.rectangle("fill", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
     love.graphics.print("", 0, 0)
