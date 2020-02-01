@@ -1,4 +1,3 @@
-
 local controls = {
     game = {
         a = {hold = function(dt) move(dt, -1) end},
@@ -46,6 +45,10 @@ local game = {
     }
 }
 
+local animation = require "lib/animation";
+
+local test = nil;
+
 function rects_collide(rect1, rect2)
     return not (rect1[1] < rect2.[3] && rect1[3] > rect2[1] &&
     rect1[2] < rect2[4] && rect1[4] > rect2[2]) 
@@ -65,7 +68,7 @@ function jump(start)
 end
 
 function love.load()
-
+    test = animation.loadAnimation("test");
 end
 
 function love.update(dt)
@@ -84,14 +87,19 @@ function love.update(dt)
         if rects_collide(rect, playerRect) then
             
         end
+
+    if test ~= nil then
+        test = animation.updateAnimation(test, dt);
     end
 end
 
 function love.draw()
-    love.graphics.print("Hello World", 400, 300);
+    local frame = test["frame"];
+    love.graphics.draw(test["frames"][frame], 1, 1, 0, 0.5, 0.5);
 end
 
 function love.keypressed(key)
 end
 
 function love.keyreleased(key)
+end
