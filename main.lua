@@ -1,3 +1,4 @@
+local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
@@ -7,6 +8,7 @@ local game = {
     
     gravity = nil,
     mode = "game",
+    bumpWorld = nil,
     scene = {
         name = nil, -- name of the scene
         collision = {{0, 400, 800, 600}, {50,200,100,500}}, -- the collision rectangles
@@ -37,7 +39,7 @@ local player = {
     groundAcceleration = 0.4,
     airAcceleration = 0.2,
     groundDeceleration = 0.5,
-    airDeceleration = 0.2,
+    airDeceleration = 0.1,
     jumpVelocity = 5,
     doubleJumpVelocity = 4,
 
@@ -46,9 +48,10 @@ local player = {
     moving = false,
     isGrounded = true,
     doubleJump = true,
+    sliding = false,
 
     get_rect = function(self)
-        return {self.position.x - 10, self.position.y, self.position.x + 10, self.position.y + 30}
+        return {self.position.x, self.position.y, self.position.x + 20, self.position.y + 30}
     end
 }
 
@@ -92,8 +95,20 @@ function jump()
     end
 end
 
+function loadScene(name)
+    -- TODO: load level data into game.scene
+
+    game.bumpWorld = bump.newWorld()
+    pRect = player:get_rect()
+    game.bumpWorld:add("player", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
+    for i, rect in ipairs(game.scene.collision) do
+        game.bumpWorld:add(i .. "", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
+    end
+end
+
 function love.load()
     game.gravity = game.baseGravity
+    loadScene("test")
 end
 
 function love.update(dt)
@@ -115,38 +130,45 @@ function love.update(dt)
     if not player.moving then
         local decelConstant = player.isGrounded and player.groundDeceleration or player.airDeceleration
         player.speed.x = player.speed.x + decelConstant * (player.speed.x > 0 and -1 or 1)
-        if math.abs(player.speed.x) < 0.001 then
+        if math.abs(player.speed.x) < decelConstant * 1.5 then
             player.speed.x = 0
         end
     end
 
-    local playerRect = player:get_rect()
+    local actualX, actualY, cols, len = game.bumpWorld:move("player", player.position.x, player.position.y)
+
+    player.position.x = actualX
+    player.position.y = actualY
+
     player.isGrounded = false
-    for i, rect in ipairs(game.scene.collision) do
-        if rects_collide(playerRect, rect) then
-            local dir, dist = resolve_collision(playerRect, rect)
-            player.position[dir] = player.position[dir] + dist
-            if dir == 1 then
-                player.speed.x = 0
-            else
-                player.speed.y = 0
-                if dist < 0 then
-                    player.isGrounded = true
-                    player.doubleJump = true
-                end
-            end
+    player.sliding = false
+    for i = 1, len do
+        local col = cols[i]
+        if col.normal.y == -1 then
+            player.isGrounded = true
+            player.doubleJump = true
+        end
+        
+        if col.normal.x ~= 0 then
+            player.speed.x = 0
+            player.sliding = true
+        end
+        if col.normal.y ~= 0 then
+            player.speed.y = 0
         end
     end
 
+    player.sliding = player.sliding and not player.isGrounded
     player.moving = false
 end
 
 function love.draw()
     for i, rect in ipairs(game.scene.collision) do
-        love.graphics.rectangle("fill",rect[1],rect[2],rect[3]-rect[1],rect[4]-rect[2])
+        love.graphics.rectangle("fill", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
     end
     local pRect = player:get_rect()
-    love.graphics.rectangle("fill",pRect[1],pRect[2],pRect[3]-pRect[1],pRect[4]-pRect[2])
+    love.graphics.rectangle("fill", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
+    love.graphics.print("", 0, 0)
 end
 
 function love.keypressed(key)
