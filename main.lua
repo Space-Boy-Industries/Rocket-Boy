@@ -3,6 +3,7 @@ json = require "lib/json";
 local animation = require "lib/animation";
 
 local drawHitboxes = true
+local drawMousePos = false
 
 local game = {
     baseGravity = 0.4,
@@ -289,12 +290,24 @@ function drawHitbox()
     end
 end
 
+function drawMousePos()
+    love.graphics.setColor(255,255,255,255);
+    if drawMousePos then
+        x, y = love.mouse.getPosition( );
+        gX = (camera.x + x) * (1/game.scene.meta.scale);
+        gY = (camera.y + y) * (1/game.scene.meta.scale);
+
+        love.graphics.print("(" .. gX .. " " .. gY .. ")", (camera.x + x), camera.y + y);
+    end
+end
+
 function love.draw()
     love.graphics.translate(-camera.x, -camera.y);
     drawBackground();
     drawPlayer();
     drawForeground();
     drawHitbox();
+    drawMousePos();
     love.graphics.translate(camera.x, camera.y);
 end
 
