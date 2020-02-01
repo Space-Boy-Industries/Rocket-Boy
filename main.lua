@@ -1,3 +1,5 @@
+json = require "lib/json";
+
 local controls = {
     game = {
         a = {hold = function(dt) move(dt, -1) end},
