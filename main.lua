@@ -1,4 +1,3 @@
-
 local game = {
     baseGravity = 0.4,
     jumpGravity = 0.2,
@@ -13,6 +12,8 @@ local game = {
         objects = nil -- table containing moving/interactible objects
     }
 }
+
+json = require "lib/json";
 
 local controls = {
     game = {

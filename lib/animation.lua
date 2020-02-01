@@ -1,4 +1,3 @@
-local json = require "lib/json";
 local fortnite = {};
 
 fortnite.loadAnimation = function(name)
