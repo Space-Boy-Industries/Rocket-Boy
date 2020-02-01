@@ -51,15 +51,15 @@ local camera = {
 }
 
 local player = {
-    maxSpeed = {x = 4, y = 10},
+    maxSpeed = {x = 3, y = 8},
     slidingSpeed = {up = 5, down = 2},
     groundAcceleration = 0.4,
     airAcceleration = 0.2,
     groundDeceleration = 0.5,
     airDeceleration = 0.1,
-    jumpVelocity = 6,
-    doubleJumpVelocity = 5,
-    wallJumpAngle = {x = 0.6, y = 0.8},
+    jumpVelocity = 5.5,
+    doubleJumpVelocity = 4.5,
+    wallJumpAngle = {x = 0.6, y = 0.75},
     slidingGracePeriod = 10,
     scale = 0.2,
 
