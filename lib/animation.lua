@@ -46,19 +46,26 @@ fortnite.updateAnimation = function(animation, dt)
 end
 
 fortnite.createAnimationController = function(name)
+    assert(type(name) == "string", "name expected string, got " .. type(name));
+    local rawStates = love.filesystem.read("assets/anim/controllers/" .. name .. "/states.json");
+    local metaRaw = love.filesystem.read("assets/anim/controllers/" .. name .. "/meta.json")
+    local states = json.decode(rawStates);
+    local meta = json.decode(metaRaw);
+
+
+    if states == nil or meta == nil then
+        return nil;
+    end
+
     local controller = {
         state = nil,
         switch = nil,
         type="animationController"
     };
-    assert(type(name) == "string", "name expected string, got " .. type(name));
-    local content = love.filesystem.read("assets/anim/controllers/" .. name .. ".json");
-    local meta = json.decode(content);
-    if meta == nil then
-        return nil;
-    end
+    
+    controller["meta"] = meta;
 
-    for i, v in pairs(meta) do
+    for i, v in pairs(states) do
         local animation = fortnite.loadAnimation(v);
         
         if animation ~= nil then
@@ -69,6 +76,8 @@ fortnite.createAnimationController = function(name)
             controller[i] = animation;
         end
     end
+
+
 
     return controller;
 end

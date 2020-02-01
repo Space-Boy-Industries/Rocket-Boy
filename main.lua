@@ -1,9 +1,8 @@
 local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
-local testAnimation = nil;
 
-local drawHitboxes = true
+local drawHitboxes = false
 
 local game = {
     baseGravity = 0.4,
@@ -48,7 +47,10 @@ local player = {
     jumpVelocity = 5,
     doubleJumpVelocity = 4,
     wallJumpAngle = {x = 0.5, y = 0.5},
+    scale = 0.4,
 
+    width = 0,
+    height = 0,
     position = {x = 320, y = 100},
     speed = {x = 0, y = 0},
     moving = false,
@@ -57,34 +59,14 @@ local player = {
     sliding = false,
 
     get_rect = function(self)
-        return {self.position.x, self.position.y, self.position.x + 20, self.position.y + 30}
+        return {self.position.x, self.position.y, self.position.x + self.width, self.position.y + self.height}
     end,
 }
-
--- returns true if rect1 and rect2 collide
-function rects_collide(rect1, rect2)
-    return not (rect1[1] > rect2[3] or rect1[3] < rect2[1] or rect1[2] > rect2[4] or rect1[4] < rect2[2]) 
-end
-
--- tells you how to adjust position of rect1 to stop colliding with rect2
-function resolve_collision(rect1, rect2)
-    local dists = {rect2[1] - rect1[3], rect2[3] - rect1[1], rect2[2] - rect1[4], rect2[4] - rect1[2]}
-    local shortest = nil
-    local adjust = nil
-    for i, dist in ipairs(dists) do
-        if shortest == nil or math.abs(dist) < shortest then
-            shortest = math.abs(dist)
-            adjust = {i < 3 and "x" or "y", dist}
-        end
-    end
-
-    return adjust[1], addjust[2]
-end
 
 function move(dt, dir)
     local accelConstant = player.isGrounded and player.groundAcceleration or player.airAcceleration
     player.speed.x = player.speed.x + dir * accelConstant, player.maxSpeed.x
-    player.moving = true
+    player.moving = true;
 end
 
 function jump()
@@ -122,13 +104,21 @@ function loadScene(name)
     end
 end
 
+function initPlayer()
+    player["animation"] = animation.createAnimationController("player");
+    player.animation.state = "idle";
+    player.width = player.animation.meta.width * player.scale;
+    player.height = player.animation.meta.width * player.scale;
+end
+
 function love.load()
     game.gravity = game.baseGravity
-    loadScene("test")
-    testAnimation = animation.createAnimationController("player");
+    initPlayer();
+    loadScene("test");
 end
 
 function love.update(dt)
+
     for key, actions in pairs(controls[game.mode]) do
         if actions.hold ~= nil and love.keyboard.isDown(key) then
             actions.hold(dt)
@@ -197,23 +187,48 @@ function love.update(dt)
     if player.sliding then
         player.doubleJump = true
     end
-    
-    player.moving = false
 
-    animation.updateController(testAnimation, dt);
+    if player.isGrounded then
+        if player.moving then
+            if player.speed.x > 0 then
+                player.animation.state = "walkright";
+            else
+                player.animation.state = "walkleft";
+            end
+        else
+            player.animation.state = "idle";
+        end
+    else
+        if player.speed.y > 0 then
+            player.animation.state = "fall";
+        else
+            if player.doubleJump then
+                player.animation.state = "jump";
+            else
+                player.animation.state = "doublejump";
+            end
+        end
+    end
+
+    animation.updateController(player["animation"], dt);
+
+    player.moving = false
 end
 
 function love.draw()
-    love.graphics.setColor(255, 0, 0)
-    for i, rect in ipairs(game.scene.collision) do
-        love.graphics.rectangle("line", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
-        love.graphics.print(i + 1, rect[1] + 2, rect[2] + 2)
-    end
-
+    love.graphics.setColor(255,255, 255);
     love.graphics.draw(game.scene.background, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
     love.graphics.draw(game.scene.foreground, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
-    local pRect = player:get_rect()
-    love.graphics.rectangle("line", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
+    love.graphics.draw(animation.getControllerSprite(player.animation), player.position.x, player.position.y, 0, player.scale, player.scale);
+    love.graphics.setColor(255, 0, 0)
+    if drawHitboxes then
+        local pRect = player:get_rect()
+        love.graphics.rectangle("line", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
+        for i, rect in ipairs(game.scene.collision) do
+            love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+            love.graphics.print(i + 1, (rect[1] + 2) * game.scene.meta.scale, (rect[2] + 2) * game.scene.meta.scale )
+        end
+    end
 end
 
 function love.keypressed(key)

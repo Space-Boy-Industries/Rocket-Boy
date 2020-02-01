@@ -1,0 +1,8 @@
+{
+    "idle": "player/idle",
+    "walkleft": "player/walkleft",
+    "walkright": "player/walkright",
+    "jump": "player/jump",
+    "doublejump": "player/doublejump",
+    "fall": "player/fall"
+}
