@@ -46,7 +46,8 @@ local player = {
     airDeceleration = 0.1,
     jumpVelocity = 5,
     doubleJumpVelocity = 4,
-    wallJumpAngle = {x = 0.5, y = 0.5},
+    wallJumpAngle = {x = 0.6, y = 0.7},
+    slidingGracePeriod = 10,
     scale = 0.4,
 
     width = 0,
@@ -56,7 +57,8 @@ local player = {
     moving = false,
     isGrounded = true,
     doubleJump = true,
-    sliding = false,
+    slidingTime = 0,
+    slidingSide = 0,
 
     get_rect = function(self)
         return {self.position.x, self.position.y, self.position.x + self.width, self.position.y + self.height}
@@ -73,9 +75,9 @@ function jump()
     if player.isGrounded then
         player.speed.y = 0 - player.jumpVelocity
         game.gravity = game.jumpGravity
-    elseif player.sliding then
+    elseif player.slidingTime > 0 then
         player.speed.y = 0 - player.jumpVelocity * player.wallJumpAngle.y
-        player.speed.x = player.sliding * player.jumpVelocity * player.wallJumpAngle.x
+        player.speed.x = player.slidingSide * player.jumpVelocity * player.wallJumpAngle.x
         game.gravity = game.jumpGravity
     elseif player.doubleJump then
         player.speed.y = 0 - player.doubleJumpVelocity
@@ -130,7 +132,7 @@ function love.update(dt)
     if math.abs(player.speed.x) > player.maxSpeed.x then
         player.speed.x = player.maxSpeed.x * (player.speed.x > 0 and 1 or -1)
     end
-    if player.sliding then
+    if player.slidingTime >= player.slidingGracePeriod - 1 then
         if player.speed.y > player.slidingSpeed.down then
             player.speed.y = player.slidingSpeed.down
         elseif player.speed.y < 0 - player.slidingSpeed.up then
@@ -163,7 +165,6 @@ function love.update(dt)
     player.position.y = actualY
 
     player.isGrounded = false
-    player.sliding = false
     for i = 1, len do
         local col = cols[i]
         if col.normal.y == -1 then
@@ -173,7 +174,9 @@ function love.update(dt)
         
         if col.normal.x ~= 0 then
             player.speed.x = 0
-            player.sliding = col.normal.x
+            player.slidingSide = col.normal.x
+            player.slidingTime = player.slidingGracePeriod
+            player.doubleJump = true
         end
         if col.normal.y ~= 0 then
             player.speed.y = 0
@@ -184,8 +187,8 @@ function love.update(dt)
         player.sliding = false
     end
 
-    if player.sliding then
-        player.doubleJump = true
+    if player.slidingTime > 0 then
+        player.slidingTime = player.slidingTime - 1
     end
 
     if player.isGrounded then
