@@ -1,6 +1,6 @@
 local bump = require "lib/bump";
-local json = require "lib/json";
-
+json = require "lib/json";
+local animation = require "lib/animation";
 
 local game = {
     baseGravity = 0.4,
@@ -20,7 +20,9 @@ local game = {
 
 local controls = {
     game = {
-        a = {hold = function(dt) move(dt, -1) end},
+        a = {hold = function(dt) 
+            move(dt, -1);
+        end},
         d = {hold = function(dt) move(dt, 1) end},
         space = {down = function() jump() end, up = function() game.gravity = game.baseGravity end}
     },
