@@ -2,6 +2,8 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
+local drawHitboxes = true
+
 local game = {
     baseGravity = 0.4,
     jumpGravity = 0.2,
@@ -35,13 +37,15 @@ local controls = {
 }
 
 local player = {
-    maxSpeed = {x = 4, y = 7},
+    maxSpeed = {x = 4, y = 10},
+    slidingSpeed = {up = 5, down = 2},
     groundAcceleration = 0.4,
     airAcceleration = 0.2,
     groundDeceleration = 0.5,
     airDeceleration = 0.1,
     jumpVelocity = 5,
     doubleJumpVelocity = 4,
+    wallJumpAngle = {x = 0.5, y = 0.5},
 
     position = {x = 320, y = 100},
     speed = {x = 0, y = 0},
@@ -52,7 +56,7 @@ local player = {
 
     get_rect = function(self)
         return {self.position.x, self.position.y, self.position.x + 20, self.position.y + 30}
-    end
+    end,
 }
 
 -- returns true if rect1 and rect2 collide
@@ -72,21 +76,22 @@ function resolve_collision(rect1, rect2)
         end
     end
 
-    return adjust[1], adjust[2]
+    return adjust[1], addjust[2]
 end
 
 function move(dt, dir)
     local accelConstant = player.isGrounded and player.groundAcceleration or player.airAcceleration
     player.speed.x = player.speed.x + dir * accelConstant, player.maxSpeed.x
-        if math.abs(player.speed.x) > player.maxSpeed.x then
-            player.speed.x = player.maxSpeed.x * (player.speed.x > 0 and 1 or -1)
-        end
     player.moving = true
 end
 
 function jump()
     if player.isGrounded then
         player.speed.y = 0 - player.jumpVelocity
+        game.gravity = game.jumpGravity
+    elseif player.sliding then
+        player.speed.y = 0 - player.jumpVelocity * player.wallJumpAngle.y
+        player.speed.x = player.sliding * player.jumpVelocity * player.wallJumpAngle.x
         game.gravity = game.jumpGravity
     elseif player.doubleJump then
         player.speed.y = 0 - player.doubleJumpVelocity
@@ -120,6 +125,21 @@ function love.update(dt)
 
     player.speed.y = player.speed.y + game.gravity
 
+    if math.abs(player.speed.x) > player.maxSpeed.x then
+        player.speed.x = player.maxSpeed.x * (player.speed.x > 0 and 1 or -1)
+    end
+    if player.sliding then
+        if player.speed.y > player.slidingSpeed.down then
+            player.speed.y = player.slidingSpeed.down
+        elseif player.speed.y < 0 - player.slidingSpeed.up then
+            player.speed.y = 0 - player.slidingSpeed.up
+        end
+    else
+        if math.abs(player.speed.y) > player.maxSpeed.y then
+            player.speed.y = player.maxSpeed.y * (player.speed.y > 0 and 1 or -1)
+        end
+    end
+
     player.position.x = player.position.x + player.speed.x * dt * 100
     player.position.y = player.position.y + player.speed.y * dt * 100
 
@@ -151,24 +171,32 @@ function love.update(dt)
         
         if col.normal.x ~= 0 then
             player.speed.x = 0
-            player.sliding = true
+            player.sliding = col.normal.x
         end
         if col.normal.y ~= 0 then
             player.speed.y = 0
         end
     end
 
-    player.sliding = player.sliding and not player.isGrounded
+    if player.isGrounded then
+        player.sliding = false
+    end
+
+    if player.sliding then
+        player.doubleJump = true
+    end
+    
     player.moving = false
 end
 
 function love.draw()
+    love.graphics.setColor(255, 0, 0)
     for i, rect in ipairs(game.scene.collision) do
-        love.graphics.rectangle("fill", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
+        love.graphics.rectangle("line", rect[1], rect[2], rect[3]-rect[1], rect[4]-rect[2])
+        love.graphics.print(i + 1, rect[1] + 2, rect[2] + 2)
     end
     local pRect = player:get_rect()
-    love.graphics.rectangle("fill", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
-    love.graphics.print("", 0, 0)
+    love.graphics.rectangle("line", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
 end
 
 function love.keypressed(key)
