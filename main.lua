@@ -45,6 +45,11 @@ local controls = {
     }
 }
 
+local camera = {
+    x = 200,
+    y = 0
+}
+
 local player = {
     maxSpeed = {x = 4, y = 10},
     slidingSpeed = {up = 5, down = 2},
@@ -230,15 +235,48 @@ function love.update(dt)
     end
 
     animation.updateController(player["animation"], dt);
-
+    updateCameraPos();
+ 
     player.moving = false
 end
 
-function love.draw()
+function updateCameraPos()
+    local centerX = player.position.x + (player.width/2);
+    local centerY = player.position.y + (player.height/2);
+    local width = love.graphics.getWidth();
+    local height = love.graphics.getHeight();
+    camera.x = centerX - (width/2);
+    camera.y = centerY - (height/2);
+
+    if camera.x + width > game.scene.background:getWidth() * game.scene.scale then
+        camera.x = (game.scene.background:getWidth() *  game.scene.scale) - width;
+    elseif camera.x < 0 then
+        camera.x = 0;
+    end
+
+    if camera.y + height > (game.scene.background:getHeight() * game.scene.scale) then
+        camera.y = (game.scene.background:getHeight() *  game.scene.scale) - height;
+    elseif camera.y < 0 then
+        camera.y = 0;
+    end
+end
+
+function drawForeground()
+    love.graphics.setColor(255,255, 255);
+    love.graphics.draw(game.scene.foreground, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
+end
+
+function drawBackground()
     love.graphics.setColor(255,255, 255);
     love.graphics.draw(game.scene.background, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
-    love.graphics.draw(game.scene.foreground, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
+end
+
+function drawPlayer()
+    love.graphics.setColor(255,255, 255);
     love.graphics.draw(animation.getControllerSprite(player.animation), player.position.x, player.position.y, 0, player.scale, player.scale);
+end
+
+function drawHitbox()
     love.graphics.setColor(255, 0, 0)
     if drawHitboxes then
         local pRect = player:get_rect()
@@ -248,6 +286,15 @@ function love.draw()
             love.graphics.print(i + 1, (rect[1] + 4) * game.scene.meta.scale, (rect[2] + 2) * game.scene.meta.scale )
         end
     end
+end
+
+function love.draw()
+    love.graphics.translate(-camera.x, -camera.y);
+    drawBackground();
+    drawPlayer();
+    drawForeground();
+    drawHitbox();
+    love.graphics.translate(camera.x, camera.y);
 end
 
 function love.keypressed(key)
