@@ -61,7 +61,7 @@ local player = {
     doubleJumpVelocity = 4,
     wallJumpAngle = {x = 0.6, y = 0.7},
     slidingGracePeriod = 10,
-    scale = 0.4,
+    scale = 0.1,
 
     width = 0,
     height = 0,
@@ -136,7 +136,7 @@ end
 function love.load()
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-0");
+    loadScene("1-1");
 end
 
 function love.update(dt)
@@ -254,11 +254,12 @@ function updateCameraPos()
         camera.x = 0;
     end
 
-    if camera.y + height > (game.scene.background:getHeight() * game.scene.scale) then
-        camera.y = (game.scene.background:getHeight() *  game.scene.scale) - height;
+    if (camera.y + height) > (game.scene.background:getHeight() * 2 * game.scene.scale) then
+        camera.y = (game.scene.background:getHeight()*  2 *  game.scene.scale) - height;
     elseif camera.y < 0 then
         camera.y = 0;
     end
+
 end
 
 function drawForeground()
