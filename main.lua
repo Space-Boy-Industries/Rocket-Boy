@@ -2,7 +2,7 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = false
+local drawHitboxes = true
 
 local game = {
     baseGravity = 0.4,
@@ -11,13 +11,21 @@ local game = {
     gravity = nil,
     mode = "game",
     bumpWorld = nil,
+    currentSong = {
+        fp = nil, -- file path of the song
+        source = nil, -- the Source object
+    }, 
     scene = {
-        name = nil, -- name of the scene
-        collision = {}, -- the collision rectangles
+        meta = {
+            name = nil, -- name of the scene
+            start = {x = 0, y = 0}, -- player starting position
+            song = nil -- file path of music for this scene
+        },
+        collision = nil, -- the collision rectangles
         background = nil, -- background image
         foreground = nil, -- foreground image
         objects = nil, -- table containing moving/interactible objects
-        scale = 0.3;
+        scale = 0.3
     }
 }
 
@@ -65,6 +73,10 @@ local player = {
     end,
 }
 
+local noWallSlide = {
+    ["1-0"] = {["3"] = true}
+}
+
 function move(dt, dir)
     local accelConstant = player.isGrounded and player.groundAcceleration or player.airAcceleration
     player.speed.x = player.speed.x + dir * accelConstant, player.maxSpeed.x
@@ -87,7 +99,6 @@ function jump()
 end
 
 function loadScene(name)
-    -- TODO: load level data into game.scene
     local rawMeta = love.filesystem.read("assets/scenes/" .. name .. "/meta.json");
     local rawCollisions = love.filesystem.read("assets/scenes/" .. name .. "/collision.json");
     local rawObjects = love.filesystem.read("assets/scenes/" .. name .. "/object.json");
@@ -104,6 +115,10 @@ function loadScene(name)
     for i, rect in ipairs(game.scene.collision) do
         game.bumpWorld:add(i .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
     end
+    game.currentSong.fp = game.scene.meta.song
+    game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
+    game.currentSong.source:setLooping(true)
+    game.currentSong.source:play()
 end
 
 function initPlayer()
@@ -116,7 +131,7 @@ end
 function love.load()
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("test");
+    loadScene("1-0");
 end
 
 function love.update(dt)
@@ -174,9 +189,10 @@ function love.update(dt)
         
         if col.normal.x ~= 0 then
             player.speed.x = 0
-            player.slidingSide = col.normal.x
-            player.slidingTime = player.slidingGracePeriod
-            player.doubleJump = true
+            if noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other] then
+                player.slidingSide = col.normal.x
+                player.slidingTime = player.slidingGracePeriod
+            end
         end
         if col.normal.y ~= 0 then
             player.speed.y = 0
@@ -229,7 +245,7 @@ function love.draw()
         love.graphics.rectangle("line", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
         for i, rect in ipairs(game.scene.collision) do
             love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
-            love.graphics.print(i + 1, (rect[1] + 2) * game.scene.meta.scale, (rect[2] + 2) * game.scene.meta.scale )
+            love.graphics.print(i + 1, (rect[1] + 4) * game.scene.meta.scale, (rect[2] + 2) * game.scene.meta.scale )
         end
     end
 end
