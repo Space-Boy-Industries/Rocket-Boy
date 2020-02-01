@@ -57,9 +57,9 @@ local player = {
     airAcceleration = 0.2,
     groundDeceleration = 0.5,
     airDeceleration = 0.1,
-    jumpVelocity = 5,
-    doubleJumpVelocity = 4,
-    wallJumpAngle = {x = 0.6, y = 0.7},
+    jumpVelocity = 6,
+    doubleJumpVelocity = 5,
+    wallJumpAngle = {x = 0.6, y = 0.8},
     slidingGracePeriod = 10,
     scale = 0.4,
 
@@ -194,7 +194,7 @@ function love.update(dt)
         
         if col.normal.x ~= 0 then
             player.speed.x = 0
-            if noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other] then
+            if not (noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other]) then
                 player.slidingSide = col.normal.x
                 player.slidingTime = player.slidingGracePeriod
             end
