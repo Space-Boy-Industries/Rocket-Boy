@@ -61,7 +61,7 @@ local player = {
     doubleJumpVelocity = 5,
     wallJumpAngle = {x = 0.6, y = 0.8},
     slidingGracePeriod = 10,
-    scale = 0.1,
+    scale = 0.2,
 
     width = 0,
     height = 0,
@@ -248,14 +248,14 @@ function updateCameraPos()
     camera.x = centerX - (width/2);
     camera.y = centerY - (height/2);
 
-    if camera.x + width > game.scene.background:getWidth() * game.scene.scale then
-        camera.x = (game.scene.background:getWidth() *  game.scene.scale) - width;
+    if camera.x + width > game.scene.background:getWidth() * game.scene.meta.scale then
+        camera.x = (game.scene.background:getWidth() *  game.scene.meta.scale) - width;
     elseif camera.x < 0 then
         camera.x = 0;
     end
 
-    if (camera.y + height) > (game.scene.background:getHeight() * 2 * game.scene.scale) then
-        camera.y = (game.scene.background:getHeight()*  2 *  game.scene.scale) - height;
+    if (camera.y + height) > (game.scene.background:getHeight() * game.scene.meta.scale) then
+        camera.y = (game.scene.background:getHeight() * game.scene.meta.scale) - height;
     elseif camera.y < 0 then
         camera.y = 0;
     end
