@@ -3,7 +3,7 @@ json = require "lib/json";
 local animation = require "lib/animation";
 
 local drawHitboxes = true
-local drawMousePos = false
+local drawMousePos = true
 
 local game = {
     baseGravity = 0.4,
