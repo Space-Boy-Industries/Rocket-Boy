@@ -2,8 +2,10 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = false
-local drawPos = false
+local drawHitboxes = true
+local drawPos = true
+
+local lastBeat = 0;
 
 local game = {
     baseGravity = 0.4,
@@ -114,6 +116,17 @@ function loadScene(name)
     game.scene["background"] = love.graphics.newImage("assets/scenes/" .. name .. "/background.png")
     game.scene["foreground"] = love.graphics.newImage("assets/scenes/" .. name .. "/foreground.png")
     game.bumpWorld = bump.newWorld()
+    for i, v in pairs(game.scene["objects"]) do
+        game.scene["objects"][i]["deltaBeat"] = 0;
+        game.scene["objects"][i]["moving"] = false;
+        game.scene["objects"][i]["rectIndex"] = 1
+        local startPos = game.scene["objects"][i]["rects"][1];
+        game.scene["objects"][i]["position"] = startPos;
+        game.scene["objects"][i]["dtMoving"] =0;
+        game.scene["objects"][i]["movingPlayer"] = false;
+        game.scene["objects"][i]["type"] = "object";
+        game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale))
+    end
     player.position.x = game.scene.meta.start.x * game.scene.meta.scale;
     player.position.y = game.scene.meta.start.y * game.scene.meta.scale;
     pRect = player:get_rect()
@@ -138,6 +151,53 @@ function love.load()
     game.gravity = game.baseGravity
     initPlayer();
     loadScene("1-1");
+end
+
+function beatUpdate()
+    for i,v in pairs(game.scene.objects) do
+        if v.deltaBeat == v.bpm then
+            v.moving = true;
+            v.deltaBeat = 0;
+            v.dtMoving = 0;
+        end
+
+        v.deltaBeat = v.deltaBeat + 1;
+    end
+end
+
+function moveObject(dt)
+    for i,v in pairs(game.scene.objects) do
+        if v.moving then
+            local nextIndex = ((v.rectIndex) % #(v.rects)) + 1;
+
+            if v.dtMoving >= v.speed then
+                v.dtMoving = 0;
+                v.rectIndex = nextIndex;
+                v.moving = false;
+                v.position = v.rects[v.rectIndex];
+                game.bumpWorld:update(v, v.position[1] * game.scene.meta.scale, v.position[2] * game.scene.meta.scale, (v.position[3] * game.scene.meta.scale)-(v.position[1] * game.scene.meta.scale), (v.position[4] * game.scene.meta.scale)-(v.position[2] * game.scene.meta.scale))
+                return;
+            end
+
+            local dx = v.rects[nextIndex][1]-v.rects[v.rectIndex][1];
+            local dy = v.rects[nextIndex][2]-v.rects[v.rectIndex][2];
+            if v.movingPlayer then
+                player.position.x = player.position.x + (dx * (dt/v.speed) * game.scene.meta.scale)
+                player.position.y = player.position.y + (dy * (dt/v.speed) * game.scene.meta.scale)
+
+
+                local actualX, actualY, cols, len = game.bumpWorld:move("player", player.position.x, player.position.y)
+
+                player.position.x = actualX
+                player.position.y = actualY
+            end
+            v.position = {v.rects[v.rectIndex][1] + (dx * (v.dtMoving/v.speed)), v.rects[v.rectIndex][2] + (dy * (v.dtMoving/v.speed)), v.rects[v.rectIndex][3] + (dx * (v.dtMoving/v.speed)), v.rects[v.rectIndex][4] + (dy * (v.dtMoving/v.speed))}
+            game.bumpWorld:update(v, v.position[1] * game.scene.meta.scale, v.position[2] * game.scene.meta.scale, (v.position[3] * game.scene.meta.scale)-(v.position[1] * game.scene.meta.scale), (v.position[4] * game.scene.meta.scale)-(v.position[2] * game.scene.meta.scale))
+            v.dtMoving = v.dtMoving + dt;
+        end
+
+        v.movingPlayer = false;
+    end
 end
 
 function love.update(dt)
@@ -191,6 +251,10 @@ function love.update(dt)
         if col.normal.y == -1 then
             player.isGrounded = true
             player.doubleJump = true
+
+            if col.other["type"] ~= nil and col.other["type"] == "object" then
+                col.other.movingPlayer = true;
+            end
         end
         
         if col.normal.x ~= 0 then
@@ -234,6 +298,15 @@ function love.update(dt)
             end
         end
     end
+
+    if lastBeat > 1 then
+        beatUpdate();
+        lastBeat = 0;
+    end
+
+    lastBeat = lastBeat + dt;
+
+    moveObject(dt);
 
     animation.updateController(player["animation"], dt);
  
@@ -286,6 +359,11 @@ function drawHitbox()
             love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
             love.graphics.print(i + 1, (rect[1] + 4) * game.scene.meta.scale, (rect[2] + 2) * game.scene.meta.scale )
         end
+
+        for i,object in ipairs(game.scene.objects) do
+            local rect = object.position;
+            love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+        end
     end
 end
 
@@ -309,7 +387,6 @@ function love.draw()
     end
 
     if scale > 1 then
-        print(scale);
         love.graphics.scale(scale, scale)
     end
 
