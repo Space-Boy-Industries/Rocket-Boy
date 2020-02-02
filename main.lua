@@ -3,8 +3,8 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = true
-local drawPos = true
+local drawHitboxes = true   
+local drawPos = false
 local lastBeat = 0;
 local doBeat = true
 local lastBeatDist = 0
@@ -139,6 +139,10 @@ function loadScene(name)
         game.scene["objects"][i]["dtMoving"] =0;
         game.scene["objects"][i]["movingPlayer"] = false;
         game.scene["objects"][i]["type"] = "object";
+        game.scene["objects"][i]["visible"] = true;
+        if game.scene["objects"][i]["sprite"] ~= nil then
+            game.scene["objects"][i]["sprite"] = love.graphics.newImage(game.scene["objects"][i]["sprite"])
+        end
         game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale))
     end
     player.position.x = game.scene.meta.start.x * game.scene.meta.scale;
@@ -168,15 +172,34 @@ function love.load()
     game.bpm = json.decode(rawBPM)
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-1");
+    loadScene("1-p");
 end
 
 function beatUpdate()
     for i,v in pairs(game.scene.objects) do
-        if v.deltaBeat == v.bpm then
-            v.moving = true;
-            v.deltaBeat = 0;
-            v.dtMoving = 0;
+        if v.deltaBeat >= v.bpm then
+            if v.offset > 0 then
+                v.offset = v.offset - 1;
+            else
+                local nextIndex = ((v.rectIndex) % #(v.rects)) + 1;
+
+                if type(v.rects[v.rectIndex]) == "string" and type(v.rects[nextIndex]) ~= "string" then
+                    local startPos = v.rects[nextIndex];
+                    game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale));
+                    v.visible = true;
+                    v.rectIndex = nextIndex;
+                    v.deltaBeat = 0;
+                elseif type(v.rects[v.rectIndex]) ~= "string" and type(v.rects[nextIndex]) == "string" then
+                    game.bumpWorld:remove(v);
+                    v.visible = false;
+                    v.rectIndex = nextIndex;
+                    v.deltaBeat = 0;
+                elseif type(v.rects[v.rectIndex]) ~= "string" and type(v.rects[nextIndex]) ~= "string" then
+                    v.moving = true;
+                    v.deltaBeat = 0;
+                    v.dtMoving = 0
+                end
+            end
         end
 
         v.deltaBeat = v.deltaBeat + 1;
@@ -395,8 +418,10 @@ function drawHitbox()
         end
 
         for i,object in ipairs(game.scene.objects) do
-            local rect = object.position;
-            love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+            if object.visible then
+                local rect = object.position;
+                love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+            end
         end
     end
 end
@@ -410,6 +435,15 @@ function drawMousePos(scale)
         gY = (camera.y + y) * (1/game.scene.meta.scale);
 
         love.graphics.print("(" .. gX .. " " .. gY .. ")", (camera.x + x)/scale, camera.y + y/scale);
+    end
+end
+
+function drawObjects()
+    for i,object in ipairs(game.scene.objects) do
+        if object.visible and object.sprite ~= nil then
+
+            love.graphics.draw(object.sprite, object.position[1] * game.scene.meta.scale, object.position[2] * game.scene.meta.scale, 0, game.scene.meta.scale, game.scene.meta.scale);
+        end
     end
 end
 
@@ -428,6 +462,7 @@ function love.draw()
 
     love.graphics.translate(-camera.x, -camera.y);
     drawBackground();
+    drawObjects();
     drawPlayer();
     drawForeground();
     drawHitbox();

@@ -1,3 +1,94 @@
-{
-    
-}
+[
+    {
+        "speed": 0.4,
+        "bpm": 1,
+        "offset": 0,
+        "rects": [
+            [2400,1700,2500,1720], 
+			[3000,1700,3100,1720],
+			[3000,1000,3100,1020],
+			[2400,1000,2500,1020]
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":0,
+        "rects": [
+            [400,2550,600,2570],
+			"Whose Json?"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":1,
+        "rects": [
+            [800,2330,1000,2350],
+			"BrOwn BrIcKs"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":0,
+        "rects": [
+            [400,2110,600,2130],
+			"WHOSE ME?!"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":1,
+        "rects": [
+            [800,1890,1000,1910],
+			"Creeper"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":0,
+        "rects": [
+            [1200,1670,1400,1690],
+			"awe man!"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 2,
+		"offset":1,
+        "rects": [
+            [1600,1890,1800,1910],
+			"JAMAC"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":0,
+        "rects": [
+            [2400,560,2600,580],
+			"SPEEDGOERGO"
+        ],
+        "sprite": null
+    },
+	{
+        "speed": 0.4,
+        "bpm": 1,
+		"offset":0,
+        "rects": [
+            [3000,560,3200,580],
+			"GARFUED"
+        ],
+        "sprite": null
+    }
+]
