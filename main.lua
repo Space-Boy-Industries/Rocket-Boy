@@ -232,7 +232,7 @@ function moveObject(dt)
                 player.position.x = actualX
                 player.position.y = actualY
             end
-            v.position = {v.rects[v.rectIndex][1] + (dx * (v.dtMoving/v.speed)), v.rects[v.rectIndex][2] + (dy * (v.dtMoving/v.speed)), v.rects[v.rectIndex][3] + (dx * (v.dtMoving/v.speed)), v.rects[v.rectIndex][4] + (dy * (v.dtMoving/v.speed))}
+            v.position = {v.position[1] + (dx * (dt/v.speed)), v.position[2] + (dy * (dt/v.speed)), v.position[3] + (dx * (dt/v.speed)), v.position[4] + (dy * (dt/v.speed))}
             game.bumpWorld:update(v, v.position[1] * game.scene.meta.scale, v.position[2] * game.scene.meta.scale, (v.position[3] * game.scene.meta.scale)-(v.position[1] * game.scene.meta.scale), (v.position[4] * game.scene.meta.scale)-(v.position[2] * game.scene.meta.scale))
             v.dtMoving = v.dtMoving + dt;
         end
