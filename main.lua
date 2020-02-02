@@ -3,11 +3,8 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = true   
-local drawPos = false
-local lastBeat = 0;
-local doBeat = true
-local lastBeatDist = 0
+local drawHitboxes = true
+local drawPos = true
 
 local game = {
     baseGravity = 0.4,
@@ -40,19 +37,20 @@ local game = {
 
 local controls = {
     game = {
-        a = {hold = function(dt) 
-            move(dt, -1);
-        end},
+        a = {hold = function(dt) move(dt, -1) end},
         d = {hold = function(dt) move(dt, 1) end},
-        space = {down = function() jump() end, up = function() game.gravity = game.baseGravity end}
+        space = {down = function() jump() end, up = function() game.gravity = game.baseGravity end},
+        escape = {down = love.event.quit}
     },
     cutscene = {
-        escape = skip_cutscene
-    },
-    menu = {
-        
+        escape = {down = love.event.quit}
     }
 }
+
+controls.game.left = controls.game.a
+controls.game.right = controls.game.d
+controls.game.w = controls.game.space
+controls.game.up = controls.game.space
 
 local camera = {
     x = 200,
@@ -74,7 +72,7 @@ local player = {
 
     width = 0,
     height = 0,
-    position = {x = 320, y = 100},
+    position = {x = 0, y = 0},
     speed = {x = 0, y = 0},
     moving = false,
     isGrounded = true,
@@ -87,10 +85,22 @@ local player = {
     end,
 }
 
-local noWallSlide = {
-    ["1-0"] = {["3"] = true},
-    ["1-1"] = {["2"] = true}
+local endTrigger = {
+    ["1-0"] = {xmin = 3800, scene = "1-1"},
+    ["1-1"] = {xmin = 4900, ymax = 1000, scene = "1-P"},
+    ["1-P"] = {xmin = 3700, ymin, 400, ymax = 500, scene = "end"}
 }
+
+local noWallSlide = {
+    ["1-0"] = {["3"] = true, ["4"] = true},
+    ["1-1"] = {["2"] = true},
+    ["end"] = {["3"] = true}
+}
+
+local nextScene = nil
+local doBeat = true
+local lastBeatDist = 0
+local justLoaded = false
 
 function move(dt, dir)
     local accelConstant = player.isGrounded and player.groundAcceleration or player.airAcceleration
@@ -158,6 +168,8 @@ function loadScene(name)
         game.bumpWorld:add((i + 1) .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
     end
 
+    game.mode = game.scene.meta.cutscene and "cutscene" or "game"
+
     game.currentSong.fp = game.scene.meta.song
     game.currentSong.spb = 60 / game.bpm[game.currentSong.fp]
     game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
@@ -168,6 +180,11 @@ function loadScene(name)
     end
 
     game.currentSong.source:play()
+    justLoaded = true
+end
+
+function unloadScene()
+    game.currentSong.source:stop()
 end
 
 function initPlayer()
@@ -254,9 +271,34 @@ function moveObject(dt)
 end
 
 function love.update(dt)
+    if justLoaded then
+        justLoaded = false
+        return
+    end
+
+    if nextScene ~= nil then
+        unloadScene()
+        loadScene(nextScene)
+        nextScene = nil
+    end
+
     for key, actions in pairs(controls[game.mode]) do
         if actions.hold ~= nil and love.keyboard.isDown(key) then
             actions.hold(dt)
+        end
+    end
+
+    local pMapPos = {x = player.position.x / game.scene.meta.scale, y = player.position.y / game.scene.meta.scale}
+    endData = endTrigger[game.scene.meta.name]
+    if endData ~= nil and pMapPos.x >= (endData.xmin or -1000000) and pMapPos.x < (endData.xmax or 1000000) and pMapPos.y >= (endData.ymin or -1000000) and pMapPos.y < (endData.ymax or 1000000) then
+        nextScene = endData.scene
+    end
+
+    if game.mode == "cutscene" then
+        if game.scene.meta.name == "end" then
+            if pMapPos.x > 1700 then
+                move(dt, -1)
+            end
         end
     end
 
@@ -482,10 +524,6 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    if key == "escape" then
-        love.event.quit()
-    end
-
     local actions = controls[game.mode][key]
     if actions ~= nil and actions.down ~= nil then
         actions.down()
