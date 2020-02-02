@@ -1,7 +1,7 @@
 {
-    "jump": "bruh.wav",
-    "doublejump":  "bruh.wav",
-    "walljump": "bruh.wav",
-    "wallgrab": "bruh.wav",
-    "land": "bruh.wav"
+    "jump": "jump1.wav",
+    "doublejump":  "jump2.wav",
+    "walljump": "jump1.wav",
+    "wallgrab": "wallGrab.wav",
+    "land": "land.wav"
 }
