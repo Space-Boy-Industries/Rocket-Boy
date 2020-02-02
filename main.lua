@@ -2,8 +2,8 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = false
-local drawMousePos = false
+local drawHitboxes = true
+local drawPos = true
 
 local game = {
     baseGravity = 0.4,
@@ -81,7 +81,8 @@ local player = {
 }
 
 local noWallSlide = {
-    ["1-0"] = {["3"] = true}
+    ["1-0"] = {["3"] = true},
+    ["1-1"] = {["2"] = true}
 }
 
 function move(dt, dir)
@@ -310,7 +311,7 @@ end
 function drawMousePos(scale)
     love.graphics.setColor(255,255,255,255);
     
-    if drawMousePos then
+    if drawPos then
         x, y = love.mouse.getPosition( );
         gX = (camera.x + x) * (1/game.scene.meta.scale);
         gY = (camera.y + y) * (1/game.scene.meta.scale);
