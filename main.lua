@@ -1,9 +1,10 @@
+--whose json?
 local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = false
-local drawMousePos = false
+local drawHitboxes = true
+local drawMousePos = true
 
 local game = {
     baseGravity = 0.4,
@@ -124,7 +125,7 @@ function loadScene(name)
     game.currentSong.fp = game.scene.meta.song
     game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
     game.currentSong.source:setLooping(true)
-    game.currentSong.source:play()
+    --game.currentSong.source:play()
 end
 
 function initPlayer()
@@ -137,7 +138,7 @@ end
 function love.load()
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-1");
+    loadScene("1-P");
 end
 
 function love.update(dt)
