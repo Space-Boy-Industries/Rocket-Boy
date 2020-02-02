@@ -14,7 +14,7 @@
 	{
         "speed": 0.4,
         "bpm": 2,
-		"offset":0,
+		"offset": 0,
         "rects": [
             [400,2550,600,2570],
 			"Whose Json?"
@@ -24,7 +24,7 @@
 	{
         "speed": 0.4,
         "bpm": 2,
-		"offset":2,
+		"offset": 2,
         "rects": [
             [800,2330,1000,2350],
 			"BrOwn BrIcKs"
@@ -44,7 +44,7 @@
 	{
         "speed": 0.4,
         "bpm": 2,
-		"offset":2,
+		"offset": 2,
         "rects": [
             [800,1890,1000,1910],
 			"Creeper"
@@ -64,7 +64,7 @@
 	{
         "speed": 0.4,
         "bpm": 2,
-		"offset":2,
+		"offset": 2,
         "rects": [
             [1600,1890,1800,1910],
 			"JAMAC"
