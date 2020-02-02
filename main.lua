@@ -213,23 +213,23 @@ function love.update(dt)
     end
 
     if player.isGrounded then
-        if player.moving then
-            if player.speed.x > 0 then
-                player.animation.state = "walkright";
-            else
-                player.animation.state = "walkleft";
-            end
+        if player.speed.x ~= 0 then
+            player.animation.state = player.speed.x > 0 and "walkright" or "walkleft";
         else
             player.animation.state = "idle";
         end
     else
-        if player.speed.y > 0 then
-            player.animation.state = "fall";
+        if player.slidingTime > 5 then
+            player.animation.state = player.slidingSide == 1 and "wallslideleft" or "wallslideright"
         else
-            if player.doubleJump then
-                player.animation.state = "jump";
+            if player.speed.y > 0 then
+                player.animation.state = "fall";
             else
-                player.animation.state = "doublejump";
+                if player.doubleJump then
+                    player.animation.state = "jump";
+                else
+                    player.animation.state = "doublejump";
+                end
             end
         end
     end
@@ -299,6 +299,10 @@ function love.draw()
 end
 
 function love.keypressed(key)
+    if key == "escape" then
+        love.event.quit()
+    end
+
     local actions = controls[game.mode][key]
     if actions ~= nil and actions.down ~= nil then
         actions.down()

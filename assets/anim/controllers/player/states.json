@@ -4,5 +4,7 @@
     "walkright": "player/walkright",
     "jump": "player/jump",
     "doublejump": "player/doublejump",
-    "fall": "player/fall"
+    "fall": "player/fall",
+    "wallslideright": "player/wallslideright",
+    "wallslideleft": "player/wallslideleft"
 }
