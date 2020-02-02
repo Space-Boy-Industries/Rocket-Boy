@@ -22,6 +22,7 @@ local game = {
     currentSong = {
         fp = nil, -- file path of the song
         source = nil, -- the Source object
+        spb = nil, -- seconds per beat
     }, 
     scene = {
         meta = {
@@ -130,6 +131,7 @@ function loadScene(name)
     game.scene["background"] = love.graphics.newImage("assets/scenes/" .. name .. "/background.png")
     game.scene["foreground"] = love.graphics.newImage("assets/scenes/" .. name .. "/foreground.png")
     game.bumpWorld = bump.newWorld()
+    local doTheTHing = {}
     for i, v in pairs(game.scene["objects"]) do
         game.scene["objects"][i]["deltaBeat"] = 0;
         game.scene["objects"][i]["moving"] = false;
@@ -143,6 +145,9 @@ function loadScene(name)
         if game.scene["objects"][i]["sprite"] ~= nil then
             game.scene["objects"][i]["sprite"] = love.graphics.newImage(game.scene["objects"][i]["sprite"])
         end
+        if game.scene["objects"][i]["speed"] == "offbeat" then
+            doTheTHing[i] = game.scene["objects"][i]
+        end
         game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale))
     end
     player.position.x = game.scene.meta.start.x * game.scene.meta.scale;
@@ -152,9 +157,16 @@ function loadScene(name)
     for i, rect in ipairs(game.scene.collision) do
         game.bumpWorld:add((i + 1) .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
     end
+
     game.currentSong.fp = game.scene.meta.song
+    game.currentSong.spb = 60 / game.bpm[game.currentSong.fp]
     game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
     game.currentSong.source:setLooping(true)
+
+    for i, obj in ipairs(doTheTHing) do
+        obj.speed = game.currentSong.spb * obj.bpm / 2
+    end
+
     game.currentSong.source:play()
 end
 
@@ -172,7 +184,7 @@ function love.load()
     game.bpm = json.decode(rawBPM)
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-p");
+    loadScene("1-P");
 end
 
 function beatUpdate()
@@ -249,9 +261,8 @@ function love.update(dt)
     end
 
     local songPos = game.currentSong.source:tell("seconds") + game.beatOffset
-    local spb = 60 / game.bpm[game.currentSong.fp]
-    local beatDist = songPos % spb
-    if beatDist > spb * 0.5 then
+    local beatDist = songPos % game.currentSong.spb
+    if beatDist > game.currentSong.spb * 0.5 then
         beatDist = 1 - beatDist
     end
 
