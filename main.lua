@@ -10,6 +10,10 @@ local game = {
     baseGravity = 0.4,
     jumpGravity = 0.2,
     beatOffset = 0.15, -- do beat actions this many seconds sooner
+    fadeLength = 1,
+    fadeTime = 0,
+    fading = nil,
+    cutsceneTime = 0,
     
     gravity = nil,
     mode = "game",
@@ -85,10 +89,17 @@ local player = {
     end,
 }
 
+local piece = {
+    x = 0,
+    y = 0,
+    image = love.graphics.newImage("assets/piece.png"),
+    visible = false
+}
+
 local endTrigger = {
     ["1-0"] = {xmin = 3800, scene = "1-1"},
     ["1-1"] = {xmin = 4900, ymax = 1000, scene = "1-P"},
-    ["1-P"] = {xmin = 3700, ymin, 400, ymax = 500, scene = "end"}
+    ["1-P"] = {xmin = 3800, ymin, 400, ymax = 500, scene = "end"}
 }
 
 local noWallSlide = {
@@ -101,6 +112,8 @@ local nextScene = nil
 local doBeat = true
 local lastBeatDist = 0
 local justLoaded = false
+local fixedRocketImage = nil
+local drawFixedRocket = false
 
 function move(dt, dir)
     local accelConstant = player.isGrounded and player.groundAcceleration or player.airAcceleration
@@ -169,6 +182,7 @@ function loadScene(name)
     end
 
     game.mode = game.scene.meta.cutscene and "cutscene" or "game"
+    game.cutsceneTime = 0
 
     game.currentSong.fp = game.scene.meta.song
     game.currentSong.spb = 60 / game.bpm[game.currentSong.fp]
@@ -195,6 +209,7 @@ function initPlayer()
 end
 
 function love.load()
+    fixedRocketImage = love.graphics.newImage("assets/scenes/end/foreground1.png")
     local rawSFX = love.filesystem.read("assets/sound/effects.json");
     local rawBPM = love.filesystem.read("assets/sound/bpm.json");
     game.sfx = json.decode(rawSFX)
@@ -288,16 +303,46 @@ function love.update(dt)
         end
     end
 
+    game.cutsceneTime = game.cutsceneTime + dt
+
     local pMapPos = {x = player.position.x / game.scene.meta.scale, y = player.position.y / game.scene.meta.scale}
     endData = endTrigger[game.scene.meta.name]
     if endData ~= nil and pMapPos.x >= (endData.xmin or -1000000) and pMapPos.x < (endData.xmax or 1000000) and pMapPos.y >= (endData.ymin or -1000000) and pMapPos.y < (endData.ymax or 1000000) then
         nextScene = endData.scene
     end
 
+    if game.scene.meta.name == "1-P" then
+        piece.x = 3850
+        piece.y = 480
+        piece.visible = true
+    end
+
     if game.mode == "cutscene" then
         if game.scene.meta.name == "end" then
             if pMapPos.x > 1700 then
                 move(dt, -1)
+            end
+
+            if game.cutsceneTime < 4 then
+                piece.x = pMapPos.x - 100
+                piece.y = pMapPos.y - 140
+            end
+
+            if game.cutsceneTime > 4 then
+                piece.visible = true
+            end
+
+            if game.cutsceneTime > 5 and game.cutsceneTime < 8 then
+                piece.x = piece.x - 120 * dt
+                piece.y = piece.y + 80 * dt
+            end
+
+            if game.cutsceneTime > 9 then
+                drawFixedRocket = true
+            end
+
+            if game.cutsceneTime > 11 then
+                love.event.quit()
             end
         end
     end
@@ -448,6 +493,9 @@ end
 function drawForeground()
     love.graphics.setColor(255,255, 255);
     love.graphics.draw(game.scene.foreground, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
+    if drawFixedRocket then
+        love.graphics.draw(fixedRocketImage, 1, 1, 0, game.scene.meta.scale, game.scene.meta.scale);
+    end
 end
 
 function drawBackground()
@@ -497,6 +545,10 @@ function drawObjects()
 
             love.graphics.draw(object.sprite, object.position[1] * game.scene.meta.scale, object.position[2] * game.scene.meta.scale, 0, game.scene.meta.scale, game.scene.meta.scale);
         end
+    end
+
+    if piece.visible then
+        love.graphics.draw(piece.image, piece.x * game.scene.meta.scale, piece.y * game.scene.meta.scale)
     end
 end
 
