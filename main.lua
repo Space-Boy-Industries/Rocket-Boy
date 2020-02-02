@@ -3,8 +3,8 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = true
-local drawPos = true
+local drawHitboxes = false
+local drawPos = false
 
 local game = {
     baseGravity = 0.4,
@@ -140,6 +140,12 @@ function loadScene(name)
     game.scene["objects"] = json.decode(rawObjects);
     game.scene["background"] = love.graphics.newImage("assets/scenes/" .. name .. "/background.png")
     game.scene["foreground"] = love.graphics.newImage("assets/scenes/" .. name .. "/foreground.png")
+    if name == "1-0" then
+        game.scene["playedCutscene"] = false;
+        print("Asfasdf")
+        print(game.scene.meta["cutsceneFile"]);
+        game.scene.meta["cutsceneFile"] = love.graphics.newVideo(game.scene.meta["cutsceneFile"]);
+    end
     game.bumpWorld = bump.newWorld()
     local doTheTHing = {}
     for i, v in pairs(game.scene["objects"]) do
@@ -173,18 +179,17 @@ function loadScene(name)
     game.currentSong.fp = game.scene.meta.song
     game.currentSong.spb = 60 / game.bpm[game.currentSong.fp]
     game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
-    game.currentSong.source:setLooping(true)
+    game.currentSong.source:setLooping(true);
 
     for i, obj in ipairs(doTheTHing) do
         obj.speed = game.currentSong.spb * obj.bpm / 2
     end
-
-    game.currentSong.source:play()
     justLoaded = true
 end
 
 function unloadScene()
     game.currentSong.source:stop()
+    game.scene["playedCutscene"] = nil;
 end
 
 function initPlayer()
@@ -201,7 +206,7 @@ function love.load()
     game.bpm = json.decode(rawBPM)
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-P");
+    loadScene("1-0");
 end
 
 function beatUpdate()
@@ -271,9 +276,29 @@ function moveObject(dt)
 end
 
 function love.update(dt)
-    if justLoaded then
-        justLoaded = false
-        return
+    if game.scene.meta.name == "1-0" then 
+        
+        if not game.scene.playedCutscene then
+            game.scene.meta.cutsceneFile:play();
+            game.scene.playedCutscene = true;
+        end
+
+        if game.scene.playedCutscene == true and  game.scene.meta.cutsceneFile:getSource():getDuration("seconds") ==  game.scene.meta.cutsceneFile:tell("seconds") then
+            game.scene.meta.cutsceneFile:pause();
+            game.scene.meta.cutsceneFile:release();
+            game.currentSong.source:play()
+        end
+
+        if justLoaded then
+            justLoaded = false
+            return
+        end
+    else
+        if justLoaded then
+            game.currentSong.source:play()
+            justLoaded = false
+            return
+        end
     end
 
     if nextScene ~= nil then
@@ -501,26 +526,35 @@ function drawObjects()
 end
 
 function love.draw()
-    local scale = love.graphics.getHeight() / 1080;
+    if game.scene.playedCutscene == true and game.scene.meta.cutsceneFile:tell("seconds") ~= 0 then
+        local margin = (love.graphics.getHeight()-(game.scene.meta.cutsceneFile:getHeight()*(love.graphics.getWidth()/game.scene.meta.cutsceneFile:getWidth())))/2
+        love.graphics.draw(game.scene.meta.cutsceneFile, 1, margin, 0, love.graphics.getWidth()/game.scene.meta.cutsceneFile:getWidth(), love.graphics.getWidth()/game.scene.meta.cutsceneFile:getWidth());
+    else
+        local scale = love.graphics.getHeight() / 1080;
 
-    if scale < 1 then
-        scale = 1
+        if scale < 1 then
+            scale = 1
+        end
+    
+        if scale > 1 then
+            love.graphics.scale(scale, scale)
+        end
+    
+        updateCameraPos(scale);
+    
+        love.graphics.translate(-camera.x, -camera.y);
+        drawBackground();
+        drawObjects();
+        drawPlayer();
+        drawForeground();
+        drawHitbox();
+        drawMousePos(scale);
+    
+        love.graphics.translate(camera.x, camera.y);
+        if game.scene.playedCutscene == true and game.scene.meta.cutsceneFile:isPlaying() then
+            love.graphics.draw(game.scene.meta.cutsceneFile, 1, 1);
+        end
     end
-
-    if scale > 1 then
-        love.graphics.scale(scale, scale)
-    end
-
-    updateCameraPos(scale);
-
-    love.graphics.translate(-camera.x, -camera.y);
-    drawBackground();
-    drawObjects();
-    drawPlayer();
-    drawForeground();
-    drawHitbox();
-    drawMousePos(scale);
-    love.graphics.translate(camera.x, camera.y);
 end
 
 function love.keypressed(key)
