@@ -135,6 +135,7 @@ function loadScene(name)
         game.scene["objects"][i]["dtMoving"] =0;
         game.scene["objects"][i]["movingPlayer"] = false;
         game.scene["objects"][i]["type"] = "object";
+        game.scene["objects"][i]["visible"] = true;
         game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale))
     end
     player.position.x = game.scene.meta.start.x * game.scene.meta.scale;
@@ -162,15 +163,31 @@ function love.load()
     game.sfx = json.decode(rawSFX)
     game.gravity = game.baseGravity
     initPlayer();
-    loadScene("1-P");
+    loadScene("1-1");
 end
 
 function beatUpdate()
     for i,v in pairs(game.scene.objects) do
-        if v.deltaBeat == v.bpm then
-            v.moving = true;
-            v.deltaBeat = 0;
-            v.dtMoving = 0;
+        if v.deltaBeat >= v.bpm then
+
+            local nextIndex = ((v.rectIndex) % #(v.rects)) + 1;
+
+            if type(v.rects[v.rectIndex]) == "string" and type(v.rects[nextIndex]) ~= "string" then
+                local startPos = v.rects[nextIndex];
+                game.bumpWorld:add(v, startPos[1] * game.scene.meta.scale, startPos[2] * game.scene.meta.scale, (startPos[3] * game.scene.meta.scale)-(startPos[1] * game.scene.meta.scale), (startPos[4] * game.scene.meta.scale)-(startPos[2] * game.scene.meta.scale));
+                v.visible = true;
+                v.rectIndex = nextIndex;
+                v.deltaBeat = 0;
+            elseif type(v.rects[v.rectIndex]) ~= "string" and type(v.rects[nextIndex]) == "string" then
+                game.bumpWorld:remove(v);
+                v.visible = false;
+                v.rectIndex = nextIndex;
+                v.deltaBeat = 0;
+            elseif type(v.rects[v.rectIndex]) ~= "string" and type(v.rects[nextIndex]) ~= "string" then
+                v.moving = true;
+                v.deltaBeat = 0;
+                v.dtMoving = 0
+            end
         end
 
         v.deltaBeat = v.deltaBeat + 1;
@@ -380,8 +397,10 @@ function drawHitbox()
         end
 
         for i,object in ipairs(game.scene.objects) do
-            local rect = object.position;
-            love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+            if object.visible then
+                local rect = object.position;
+                love.graphics.rectangle("line", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+            end
         end
     end
 end
