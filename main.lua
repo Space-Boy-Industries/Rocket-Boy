@@ -91,7 +91,8 @@ function move(dt, dir)
 end
 
 function playSound(name)
-    game.sfx[name]:play()
+    local sfx = love.audio.newSource("assets/sound/effect/" .. game.sfx[name], "static")
+    sfx:play()
 end
 
 function jump()
@@ -144,18 +145,13 @@ end
 
 function love.load()
     local rawSFX = love.filesystem.read("assets/sound/effects.json");
-    local sfxFiles = json.decode(rawSFX)
-    for name, fn in pairs(sfxFiles) do
-        game.sfx[name] = love.audio.newSource("assets/sound/effect/" .. fn, "static")
-    end
-
+    game.sfx = json.decode(rawSFX)
     game.gravity = game.baseGravity
     initPlayer();
     loadScene("1-1");
 end
 
 function love.update(dt)
-
     for key, actions in pairs(controls[game.mode]) do
         if actions.hold ~= nil and love.keyboard.isDown(key) then
             actions.hold(dt)
