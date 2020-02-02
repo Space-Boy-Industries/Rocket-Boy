@@ -7,19 +7,19 @@
             [1300,390,1460,550], 
 			[1460,390,1620,550]
         ],
-        "sprite": null
+        "sprite": "assets/objects/piston.png"
     },
     {
         "speed": "offbeat",
         "bpm": 2,
         "offset": 0,
         "rects": [
-            [2400,1700,2550,1720], 
-			[2950,1700,3100,1720],
-			[2950,1000,3100,1020],
-			[2400,1000,2550,1020]
+            [2400,1700,2570,1720], 
+			[2930,1700,3100,1720],
+			[2930,1000,3100,1020],
+			[2400,1000,2570,1020]
         ],
-        "sprite": null
+        "sprite": "assets/objects/movePlatform.png"
     },
 	{
         "speed": 0.4,
@@ -29,7 +29,7 @@
             [400,2550,600,2570],
 			"Whose Json?"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -39,7 +39,7 @@
             [800,2330,1000,2350],
 			"BrOwn BrIcKs"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -49,7 +49,7 @@
             [400,2110,600,2130],
 			"WHOSE ME?!"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -59,7 +59,7 @@
             [800,1890,1000,1910],
 			"Creeper"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -69,7 +69,7 @@
             [1200,1670,1400,1690],
 			"awe man!"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -79,7 +79,7 @@
             [1600,1890,1800,1910],
 			"JAMAC"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -89,7 +89,7 @@
             [2400,560,2600,580],
 			"SPEEDGOERGO"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     },
 	{
         "speed": 0.4,
@@ -99,6 +99,6 @@
             [3000,560,3200,580],
 			"GARFUED"
         ],
-        "sprite": null
+        "sprite": "assets/objects/dissPlatform.png"
     }
 ]
