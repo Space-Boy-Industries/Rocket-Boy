@@ -12,6 +12,7 @@ local game = {
     gravity = nil,
     mode = "game",
     bumpWorld = nil,
+    sfx = {},
     currentSong = {
         fp = nil, -- file path of the song
         source = nil, -- the Source object
@@ -89,18 +90,25 @@ function move(dt, dir)
     player.moving = true;
 end
 
+function playSound(name)
+    game.sfx[name]:play()
+end
+
 function jump()
     if player.isGrounded then
         player.speed.y = 0 - player.jumpVelocity
         game.gravity = game.jumpGravity
+        playSound("jump")
     elseif player.slidingTime > 0 then
         player.speed.y = 0 - player.jumpVelocity * player.wallJumpAngle.y
         player.speed.x = player.slidingSide * player.jumpVelocity * player.wallJumpAngle.x
         game.gravity = game.jumpGravity
+        playSound("walljump")
     elseif player.doubleJump then
         player.speed.y = 0 - player.doubleJumpVelocity
         player.doubleJump = false
         game.gravity = game.jumpGravity
+        playSound("doublejump")
     end
 end
 
@@ -135,6 +143,12 @@ function initPlayer()
 end
 
 function love.load()
+    local rawSFX = love.filesystem.read("assets/sound/effects.json");
+    local sfxFiles = json.decode(rawSFX)
+    for name, fn in pairs(sfxFiles) do
+        game.sfx[name] = love.audio.newSource("assets/sound/effect/" .. fn, "static")
+    end
+
     game.gravity = game.baseGravity
     initPlayer();
     loadScene("1-1");
@@ -185,15 +199,24 @@ function love.update(dt)
     player.position.x = actualX
     player.position.y = actualY
 
+    local playWallGrab = false
     player.isGrounded = false
     for i = 1, len do
         local col = cols[i]
         if col.normal.y == -1 then
+            if player.speed.y > game.gravity * 1.5 then
+                playSound("land")
+            end
+
             player.isGrounded = true
             player.doubleJump = true
         end
         
         if col.normal.x ~= 0 then
+            if math.abs(player.speed.x) > player.airAcceleration * 1.5 then
+                playWallGrab = true
+            end
+            
             player.speed.x = 0
             if not (noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other]) then
                 player.slidingSide = col.normal.x
@@ -205,15 +228,14 @@ function love.update(dt)
         end
     end
 
-    if player.isGrounded then
-        player.sliding = false
-    end
-
     if player.slidingTime > 0 then
         player.slidingTime = player.slidingTime - 1
     end
 
     if player.isGrounded then
+        player.sliding = false
+        playWallGrab = false
+
         if player.speed.x ~= 0 then
             player.animation.state = player.speed.x > 0 and "walkright" or "walkleft";
         else
@@ -236,7 +258,7 @@ function love.update(dt)
     end
 
     animation.updateController(player["animation"], dt);
- 
+    local foo = playWallGrab and playSound("wallgrab")
     player.moving = false
 end
 
