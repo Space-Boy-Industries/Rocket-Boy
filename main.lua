@@ -6,15 +6,19 @@ local animation = require "lib/animation";
 local drawHitboxes = true   
 local drawPos = false
 local lastBeat = 0;
+local doBeat = true
+local lastBeatDist = 0
 
 local game = {
     baseGravity = 0.4,
     jumpGravity = 0.2,
+    beatOffset = 0.15, -- do beat actions this many seconds sooner
     
     gravity = nil,
     mode = "game",
     bumpWorld = nil,
-    sfx = {},
+    sfx = nil,
+    bpm = nil,
     currentSong = {
         fp = nil, -- file path of the song
         source = nil, -- the Source object
@@ -146,12 +150,12 @@ function loadScene(name)
     pRect = player:get_rect()
     game.bumpWorld:add("player", pRect[1], pRect[2], pRect[3]-pRect[1], pRect[4]-pRect[2])
     for i, rect in ipairs(game.scene.collision) do
-        game.bumpWorld:add(i .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
+        game.bumpWorld:add((i + 1) .. "", rect[1] * game.scene.meta.scale, rect[2] * game.scene.meta.scale, (rect[3] * game.scene.meta.scale)-(rect[1] * game.scene.meta.scale), (rect[4] * game.scene.meta.scale)-(rect[2] * game.scene.meta.scale))
     end
     game.currentSong.fp = game.scene.meta.song
     game.currentSong.source = love.audio.newSource("assets/sound/music/" .. game.currentSong.fp, "stream")
     game.currentSong.source:setLooping(true)
-    --game.currentSong.source:play()
+    game.currentSong.source:play()
 end
 
 function initPlayer()
@@ -163,7 +167,9 @@ end
 
 function love.load()
     local rawSFX = love.filesystem.read("assets/sound/effects.json");
+    local rawBPM = love.filesystem.read("assets/sound/bpm.json");
     game.sfx = json.decode(rawSFX)
+    game.bpm = json.decode(rawBPM)
     game.gravity = game.baseGravity
     initPlayer();
     loadScene("1-p");
@@ -242,6 +248,22 @@ function love.update(dt)
         end
     end
 
+    local songPos = game.currentSong.source:tell("seconds") + game.beatOffset
+    local spb = 60 / game.bpm[game.currentSong.fp]
+    local beatDist = songPos % spb
+    if beatDist > spb * 0.5 then
+        beatDist = 1 - beatDist
+    end
+
+    if beatDist > lastBeatDist and doBeat then
+        beatUpdate()
+        doBeat = false
+    elseif beatDist < lastBeatDist then
+        doBeat = true
+    end
+
+    lastBeatDist = beatDist
+
     player.speed.y = player.speed.y + game.gravity
 
     if math.abs(player.speed.x) > player.maxSpeed.x then
@@ -297,15 +319,15 @@ function love.update(dt)
         end
         
         if col.normal.x ~= 0 then
-            if math.abs(player.speed.x) > player.airAcceleration * 1.5 then
-                playWallGrab = true
-            end
+            if not (noWallSlide[game.scene.meta.name] and noWallSlide[game.scene.meta.name][col.other]) then
+                if math.abs(player.speed.x) > player.airAcceleration * 1.5 then
+                    playWallGrab = true
+                end
             
-            player.speed.x = 0
-            if not (noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other]) then
                 player.slidingSide = col.normal.x
                 player.slidingTime = player.slidingGracePeriod
             end
+            player.speed.x = 0
         end
         if col.normal.y ~= 0 then
             player.speed.y = 0
@@ -340,13 +362,6 @@ function love.update(dt)
             end
         end
     end
-
-    if lastBeat > 1 then
-        beatUpdate();
-        lastBeat = 0;
-    end
-
-    lastBeat = lastBeat + dt;
 
     moveObject(dt);
 
