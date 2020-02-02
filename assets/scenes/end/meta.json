@@ -1,0 +1,10 @@
+{
+    "name": "end",
+    "start": {
+        "x": 3800,
+        "y": 1026
+    },
+    "scale": 0.3,
+    "song": "1-1.wav",
+    "cutscene": true
+}
