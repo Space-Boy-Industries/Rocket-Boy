@@ -2,7 +2,7 @@ local bump = require "lib/bump";
 json = require "lib/json";
 local animation = require "lib/animation";
 
-local drawHitboxes = true
+local drawHitboxes = false
 local drawMousePos = false
 
 local game = {
@@ -236,16 +236,15 @@ function love.update(dt)
     end
 
     animation.updateController(player["animation"], dt);
-    updateCameraPos();
  
     player.moving = false
 end
 
-function updateCameraPos()
+function updateCameraPos(scale)
     local centerX = player.position.x + (player.width/2);
     local centerY = player.position.y + (player.height/2);
-    local width = love.graphics.getWidth();
-    local height = love.graphics.getHeight();
+    local width = love.graphics.getWidth()/scale;
+    local height = love.graphics.getHeight()/scale;
     camera.x = centerX - (width/2);
     camera.y = centerY - (height/2);
 
@@ -290,24 +289,38 @@ function drawHitbox()
     end
 end
 
-function drawMousePos()
+function drawMousePos(scale)
     love.graphics.setColor(255,255,255,255);
+    
     if drawMousePos then
         x, y = love.mouse.getPosition( );
         gX = (camera.x + x) * (1/game.scene.meta.scale);
         gY = (camera.y + y) * (1/game.scene.meta.scale);
 
-        love.graphics.print("(" .. gX .. " " .. gY .. ")", (camera.x + x), camera.y + y);
+        love.graphics.print("(" .. gX .. " " .. gY .. ")", (camera.x + x)/scale, camera.y + y/scale);
     end
 end
 
 function love.draw()
+    local scale = love.graphics.getHeight() / 1080;
+
+    if scale < 1 then
+        scale = 1
+    end
+
+    if scale > 1 then
+        print(scale);
+        love.graphics.scale(scale, scale)
+    end
+
+    updateCameraPos(scale);
+
     love.graphics.translate(-camera.x, -camera.y);
     drawBackground();
     drawPlayer();
     drawForeground();
     drawHitbox();
-    drawMousePos();
+    drawMousePos(scale);
     love.graphics.translate(camera.x, camera.y);
 end
 
