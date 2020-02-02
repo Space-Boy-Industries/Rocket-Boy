@@ -4,7 +4,7 @@ json = require "lib/json";
 local animation = require "lib/animation";
 
 local drawHitboxes = true
-local drawMousePos = true
+local drawPos = true
 
 local game = {
     baseGravity = 0.4,
@@ -13,6 +13,7 @@ local game = {
     gravity = nil,
     mode = "game",
     bumpWorld = nil,
+    sfx = {},
     currentSong = {
         fp = nil, -- file path of the song
         source = nil, -- the Source object
@@ -81,7 +82,8 @@ local player = {
 }
 
 local noWallSlide = {
-    ["1-0"] = {["3"] = true}
+    ["1-0"] = {["3"] = true},
+    ["1-1"] = {["2"] = true}
 }
 
 function move(dt, dir)
@@ -90,18 +92,26 @@ function move(dt, dir)
     player.moving = true;
 end
 
+function playSound(name)
+    local sfx = love.audio.newSource("assets/sound/effect/" .. game.sfx[name], "static")
+    sfx:play()
+end
+
 function jump()
     if player.isGrounded then
         player.speed.y = 0 - player.jumpVelocity
         game.gravity = game.jumpGravity
+        playSound("jump")
     elseif player.slidingTime > 0 then
         player.speed.y = 0 - player.jumpVelocity * player.wallJumpAngle.y
         player.speed.x = player.slidingSide * player.jumpVelocity * player.wallJumpAngle.x
         game.gravity = game.jumpGravity
+        playSound("walljump")
     elseif player.doubleJump then
         player.speed.y = 0 - player.doubleJumpVelocity
         player.doubleJump = false
         game.gravity = game.jumpGravity
+        playSound("doublejump")
     end
 end
 
@@ -136,13 +146,14 @@ function initPlayer()
 end
 
 function love.load()
+    local rawSFX = love.filesystem.read("assets/sound/effects.json");
+    game.sfx = json.decode(rawSFX)
     game.gravity = game.baseGravity
     initPlayer();
     loadScene("1-P");
 end
 
 function love.update(dt)
-
     for key, actions in pairs(controls[game.mode]) do
         if actions.hold ~= nil and love.keyboard.isDown(key) then
             actions.hold(dt)
@@ -186,15 +197,24 @@ function love.update(dt)
     player.position.x = actualX
     player.position.y = actualY
 
+    local playWallGrab = false
     player.isGrounded = false
     for i = 1, len do
         local col = cols[i]
         if col.normal.y == -1 then
+            if player.speed.y > game.gravity * 1.5 then
+                playSound("land")
+            end
+
             player.isGrounded = true
             player.doubleJump = true
         end
         
         if col.normal.x ~= 0 then
+            if math.abs(player.speed.x) > player.airAcceleration * 1.5 then
+                playWallGrab = true
+            end
+            
             player.speed.x = 0
             if not (noWallSlide[game.scene.name] and noWallSlide[game.scene.name][col.other]) then
                 player.slidingSide = col.normal.x
@@ -206,15 +226,14 @@ function love.update(dt)
         end
     end
 
-    if player.isGrounded then
-        player.sliding = false
-    end
-
     if player.slidingTime > 0 then
         player.slidingTime = player.slidingTime - 1
     end
 
     if player.isGrounded then
+        player.sliding = false
+        playWallGrab = false
+
         if player.speed.x ~= 0 then
             player.animation.state = player.speed.x > 0 and "walkright" or "walkleft";
         else
@@ -237,7 +256,7 @@ function love.update(dt)
     end
 
     animation.updateController(player["animation"], dt);
- 
+    local foo = playWallGrab and playSound("wallgrab")
     player.moving = false
 end
 
@@ -293,7 +312,7 @@ end
 function drawMousePos(scale)
     love.graphics.setColor(255,255,255,255);
     
-    if drawMousePos then
+    if drawPos then
         x, y = love.mouse.getPosition( );
         gX = (camera.x + x) * (1/game.scene.meta.scale);
         gY = (camera.y + y) * (1/game.scene.meta.scale);
