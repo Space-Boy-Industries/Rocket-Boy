@@ -3,7 +3,7 @@ json = require "lib/json";
 local animation = require "lib/animation";
 
 local drawHitboxes = false
-local drawMousePos = false
+local drawPos = false
 
 local game = {
     baseGravity = 0.4,
@@ -292,7 +292,7 @@ end
 function drawMousePos(scale)
     love.graphics.setColor(255,255,255,255);
     
-    if drawMousePos then
+    if drawPos then
         x, y = love.mouse.getPosition( );
         gX = (camera.x + x) * (1/game.scene.meta.scale);
         gY = (camera.y + y) * (1/game.scene.meta.scale);
